@@ -1,0 +1,55 @@
+`timescale 1ns / 1ps
+module UpDownCounter(
+    reset,
+    enable,
+    clk,
+    count
+    );
+	 
+	input wire clk;
+	input wire reset;
+	input wire enable;
+	output reg [4:0] count;
+	
+	parameter [4:0] max;
+	parameter [1:0] UP  = 2'b00,
+	                DOWN = 2'b01,
+	                RESET = 2'b11,
+	                IDLE = 2'b10;
+	
+	reg [1:0] state, next, saved_state;
+	
+	always @(posedge clk)
+		if(reset)
+			state = RESET;
+		else if (enable)
+			state = next;
+		else begin
+			state = IDLE;
+		end
+	
+	always @(negedge clk)
+		case (state)
+			UP:
+				if(count == max) begin
+					next = DOWN;
+					count = count - 1;
+				end else
+					count = count + 1;
+			DOWN:
+				if(count == 0) begin
+					next = UP;
+					count = count + 1;
+				end else
+					count = count - 1;
+			RESET: 
+				begin
+					count = 0;
+					next = UP;
+				end
+			IDLE:
+				if(enable) next = saved_state;
+				else next = IDLE;
+		endcase
+
+endmodule 
